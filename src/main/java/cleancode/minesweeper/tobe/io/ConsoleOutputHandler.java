@@ -3,6 +3,10 @@ package cleancode.minesweeper.tobe.io;
 import cleancode.minesweeper.tobe.GameBoard;
 import cleancode.minesweeper.tobe.GameException;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.IntStream;
+
 public class ConsoleOutputHandler {
     public void showGameStartComments() {
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
@@ -11,15 +15,27 @@ public class ConsoleOutputHandler {
     }
 
     public void showBoard(GameBoard board) {
-        System.out.println("   a b c d e f g h i j");
+        String joiningAlphabets = generateColAlphabets(board);
+        System.out.println("    " + joiningAlphabets);
+
+//        System.out.println("   a b c d e f g h i j");
         for (int row = 0; row < board.getRowSize(); row++) {
-            System.out.printf("%d  ", row + 1);
+            System.out.printf("%2d  ", row + 1);
             for (int col = 0; col < board.getColSize(); col++) {
                 System.out.print(board.getSign(row, col) + " ");
             }
             System.out.println();
         }
         System.out.println();
+    }
+
+    private String generateColAlphabets(GameBoard board) {
+        List<String> alphabets = IntStream.range(0, board.getColSize())
+                .mapToObj(index -> (char) ('a' + index))
+                .map(Object::toString)
+                .toList();
+
+        return String.join(" ", alphabets);
     }
 
     public void printGameWinningComment() {
