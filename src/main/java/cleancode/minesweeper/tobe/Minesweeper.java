@@ -3,86 +3,85 @@ package cleancode.minesweeper.tobe;
 import cleancode.minesweeper.tobe.gamelevel.GameLevel;
 import cleancode.minesweeper.tobe.io.InputHandler;
 import cleancode.minesweeper.tobe.io.OutputHandler;
+import cleancode.minesweeper.tobe.position.CellPosition;
 
-public class Minesweeper implements GameInitializable, GameRunnable{
+public class Minesweeper implements GameInitializable, GameRunnable {
 
     private final GameBoard gameBoard;
-    private final BoardIndexConverter boardIndexConverter = new BoardIndexConverter();
     private final InputHandler inputHandler;
     private final OutputHandler outputHandler;
     private int gameStatus = 0; // 0: 게임 중, 1: 승리, -1: 패배
 
-    public Minesweeper(GameLevel gameLevel, InputHandler inputHandler, OutputHandler outputHandler){
+    public Minesweeper(GameLevel gameLevel, InputHandler inputHandler, OutputHandler outputHandler) {
         gameBoard = new GameBoard(gameLevel);
         this.inputHandler = inputHandler;
         this.outputHandler = outputHandler;
     }
 
+    @Override
+    public void initialize() {
+        gameBoard.initializeGame();
+    }
 
+    @Override
     public void run() {
         outputHandler.showGameStartComments();
 
         while (true) {
-            try{
+            try {
                 outputHandler.showBoard(gameBoard);
 
-                if (doseUserWinTheGame()) {
+                if (doesUserWinTheGame()) {
                     outputHandler.showGameWinningComment();
                     break;
                 }
-                if (doseUserLoseTheGame()) {
+                if (doesUserLoseTheGame()) {
                     outputHandler.showGameLosingComment();
                     break;
                 }
 
-                String cellInput = getCellInputFromUser();
-                String userActionCol = getUserActionInputFromUser();
-                actOnCell(cellInput, userActionCol);
-                actOnCell(cellInput, userActionCol);
-
-            } catch (GameException e){
+                CellPosition cellPosition = getCellInputFromUser();
+                String userActionInput = getUserActionInputFromUser();
+                actOnCell(cellPosition, userActionInput);
+            } catch (GameException e) {
                 outputHandler.showExceptionMessage(e);
-            } catch (Exception e){
+            } catch (Exception e) {
                 outputHandler.showSimpleMessage("프로그램에 문제가 생겼습니다.");
             }
         }
     }
 
-
-
-    private void actOnCell(String cellInput, String userActionCol) {
-        int selectedColIndex = boardIndexConverter.getSelectedColIndex(cellInput, gameBoard.getColSize());
-        int selectedRowIndex = boardIndexConverter.getSelectedRowIndex(cellInput, gameBoard.getRowSize());
-
-        if (doseUserChooseToPlantFlag(userActionCol)) {
-            gameBoard.flag(selectedRowIndex, selectedColIndex);
-//            BOARD[selectedRowIndex][selectedColIndex].flag();
+    private void actOnCell(CellPosition cellPosition, String userActionInput) {
+        if (doesUserChooseToPlantFlag(userActionInput)) {
+            gameBoard.flagAt(cellPosition);
             checkIfGameIsOver();
             return;
         }
 
-        if (doseUserChooseToOpenCell(userActionCol)) {
-            if (gameBoard.isLandMineCell(selectedRowIndex, selectedColIndex)) {
-                gameBoard.open(selectedRowIndex, selectedColIndex);
-//                BOARD[selectedRowIndex][selectedColIndex].open();
-                changeIfGameToLose();
+        if (doesUserChooseToOpenCell(userActionInput)) {
+            if (gameBoard.isLandMineCellAt(cellPosition)) {
+                gameBoard.openAt(cellPosition);
+                changeGameStatusToLose();
                 return;
             }
 
-            gameBoard.openSurroundedCells(selectedRowIndex, selectedColIndex);
+            gameBoard.openSurroundedCells(cellPosition);
             checkIfGameIsOver();
             return;
         }
-        throw new GameException("잘못된 번호를 선택");
-
+        throw new GameException("잘못된 번호를 선택하셨습니다.");
     }
 
-    private boolean doseUserChooseToOpenCell(String userActionCol) {
-        return userActionCol.equals("1");
+    private void changeGameStatusToLose() {
+        gameStatus = -1;
     }
 
-    private boolean doseUserChooseToPlantFlag(String userActionCol) {
-        return userActionCol.equals("2");
+    private boolean doesUserChooseToOpenCell(String userActionInput) {
+        return userActionInput.equals("1");
+    }
+
+    private boolean doesUserChooseToPlantFlag(String userActionInput) {
+        return userActionInput.equals("2");
     }
 
     private String getUserActionInputFromUser() {
@@ -90,16 +89,21 @@ public class Minesweeper implements GameInitializable, GameRunnable{
         return inputHandler.getUserInput();
     }
 
-    private String getCellInputFromUser() {
+    private CellPosition getCellInputFromUser() {
         outputHandler.showCommentForSelectingCell();
-        return inputHandler.getUserInput();
+        CellPosition cellPosition = inputHandler.getCellPositionFromUser();
+        if (gameBoard.isInvalidCellPosition(cellPosition)) {
+            throw new GameException("잘못된 좌표를 선택하셨습니다.");
+        }
+
+        return cellPosition;
     }
 
-    private boolean doseUserLoseTheGame() {
+    private boolean doesUserLoseTheGame() {
         return gameStatus == -1;
     }
 
-    private boolean doseUserWinTheGame() {
+    private boolean doesUserWinTheGame() {
         return gameStatus == 1;
     }
 
@@ -113,23 +117,4 @@ public class Minesweeper implements GameInitializable, GameRunnable{
         gameStatus = 1;
     }
 
-    private void changeIfGameToLose() {
-        gameStatus = -1;
-    }
-
-//    private static boolean isAllCellIsOpend() {
-//        boolean isAllOpened = true;
-//        for (int row = 0; row < BOARD_ROW_SIZE; row++) {
-//            for (int col = 0; col < BOARD_COL_SIZE; col++) {
-//                if (BOARD[row][col].equals(CLOSED_CELL_SIGN)) {
-//                    isAllOpened = false;
-//                }
-//            }
-//        }
-//        return isAllOpened;
-//    }
-    @Override
-    public void initialze() {
-        gameBoard.initializeGame();
-    }
 }
