@@ -2,7 +2,6 @@ package cleancode.minesweeper.tobe.cell;
 
 public class EmptyCell implements Cell {
 
-
     private final CellState cellState = CellState.initialize();
 
     @Override
@@ -13,6 +12,17 @@ public class EmptyCell implements Cell {
     @Override
     public boolean hasLandMineCount() {
         return false;
+    }
+
+    @Override
+    public CellSnapshot getSnapshot() {
+        if (cellState.isOpened()) {
+            return CellSnapshot.ofEmpty();
+        }
+        if (cellState.isFlagged()) {
+            return CellSnapshot.ofFlag();
+        }
+        return CellSnapshot.ofUnchecked();
     }
 
     @Override
